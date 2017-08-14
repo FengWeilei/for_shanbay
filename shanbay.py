@@ -46,19 +46,19 @@ def register():
 
 #User login
 @app.route("/login",methods=['GET','POST'])
-def login():  # 58
-    if request.method == 'POST':  # 62
+def login():
+    if request.method == 'POST':
         # Get Form Fields
-        username = request.form['username']  # 63
+        username = request.form['username']
         password_candidate = request.form['password']
 
         # Create cursor
-        cur = mysql.connection.cursor()  # 64
+        cur = mysql.connection.cursor()
         # Get user by username
         result = cur.execute(
             "SELECT * FROM users WHERE username = %s", [username])
 
-        if result > 0:   # 65
+        if result > 0:
             # Get stored hash
             data = cur.fetchone()
             password = data['password']
@@ -89,6 +89,117 @@ def logout():
     flash("You're now logged out.","success")
     return redirect(url_for('login'))
 
+
+@app.route('/dashboard')
+def dashboard():
+    cur = mysql.connection.cursor()
+
+    result = cur.execute("SELECT * FROM words")
+
+    words = cur.fetchall()
+
+    if result > 0:
+        return render_template("dashboard.html",words=words)
+
+    else:
+        msg = "No words Found"
+        return render_template("dashboard.html")
+
+    cur.close()
+
+
+class WordForm(FlaskForm):
+    word = StringField('单词', [validators.Length(min=1, max=200)])
+    meaning = TextAreaField('解释', [validators.Length(min=2)])
+
+
+# Add Word
+@app.route('/add_word', methods=['GET', 'POST'])
+def add_word():
+    form = WordForm(request.form)
+    if request.method == 'POST' and form.validate_on_submit():
+        word = form.word.data
+        meaning = form.meaning.data
+
+        # Create Cursor
+        cur = mysql.connection.cursor()
+
+        # Execute
+
+        cur.execute("INSERT INTO words(word, meaning) VALUES(%s, %s)",
+                    (word, meaning))
+
+        # Commit to DB
+        mysql.connection.commit()
+
+        # Close
+        cur.close()
+
+        flash('Word Created', 'success')
+
+        return redirect(url_for('dashboard'))
+    return render_template('add_word.html', form=form)
+
+# edit words
+@app.route('/words')
+def words():
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get articles
+    result = cur.execute("SELECT * FROM words")
+
+    words = cur.fetchall()
+
+    if result > 0:
+        return render_template('words.html', words=words)
+    else:
+        msg = 'No Words Found'
+        return render_template('words.html', msg=msg)
+    # Close connection
+    cur.close()
+
+@app.route('/word/<string:id>/')
+def article(id):
+    cur = mysql.connection.cursor()
+    result = cur.execute("SELECT * FROM words WHERE id = %s", [id])
+    word = cur.fetchone()
+    next = int(id) + 1
+    previous = int(id) - 1
+    return render_template('word.html', word=word, previous=previous, next=str(next))
+
+# Edit word
+@app.route('/edit_word/<string:id>', methods=['GET', 'POST'])
+def edit_word(id):
+    # Create cursor
+    cur = mysql.connection.cursor()
+
+    # Get article by id
+    result = cur.execute("SELECT * FROM words WHERE id = %s", [id])
+    word = cur.fetchone()
+    cur.close()
+
+    # Get form
+    form = WordForm(request.form)
+
+    # Populate article form mysql
+    form.word.data = word['word']
+    form.meaning.data = word['meaning']
+
+    if request.method == 'POST' and form.validate_on_submit():
+        word = request.form['word']
+        meaning = request.form['meaning']
+
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "UPDATE words SET word=%s, meaning=%s WHERE id= %s", (word, meaning, id))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Word Updated', 'success')
+
+        return redirect(url_for('dashboard'))
+    return render_template('edit_word.html', form=form)
 
 
 if __name__ == '__main__':

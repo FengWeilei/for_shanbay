@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>{{word.word}}</h1>
+  
+  <hr>
+	<div class="jumbotron text-center">
+	    <a href="http://127.0.0.1:5000/word/{{previous}}" class="btn btn-primary pull-left">上一个</a>
+	    <a href="http://127.0.0.1:5000/word/{{next}}" class="btn btn-primary pull-right">下一个</a>
+	    <p>{{ word.word }}</p>
+	    <p>{{word.meaning|safe }}</p>
+	</div>
+{% endblock %}

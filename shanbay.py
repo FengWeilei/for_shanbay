@@ -19,8 +19,8 @@ def index():
 	return render_template("index.html")
 
 class RegisterForm(FlaskForm):
-    username = StringField('Username', [validators.Length(min=4, max=25)])
-    email = StringField('Email', [validators.Length(min=6, max=50)])
+    username = StringField('Username', [validators.Length(min=1, max=25)])
+    email = StringField('Email', [validators.Length(min=5, max=50)])
     password = PasswordField('Password', [
         validators.DataRequired(),
         validators.EqualTo('confirm', message='Passwords do not match')
@@ -41,7 +41,7 @@ def register():
 
     	flash("You are now registered.Please log in.",'success')
 
-    	return redirect(url_for('index'))
+    	return redirect(url_for('login'))
     return render_template('register.html',form=form)
 
 #User login
@@ -70,7 +70,7 @@ def login():
                 session['username'] = username
 
                 flash('You are now logged in', 'success')
-                return redirect(url_for('index'))
+                return redirect(url_for('dashboard'))
             else:
                 error = 'Please check your password.'
                 return render_template('login.html', error=error)
@@ -201,6 +201,13 @@ def edit_word(id):
         return redirect(url_for('dashboard'))
     return render_template('edit_word.html', form=form)
 
+@app.route('/articles')
+def articles():
+    return render_template("blank.html")
+
+@app.route('/listen')
+def listen():
+    return render_template("blank.html")
 
 if __name__ == '__main__':
 	app.secret_key="It doesn't matter"
